@@ -1,0 +1,16 @@
+{
+  "name": "keepalive-desec",
+  "version": "1.0.0",
+  "description": "自动登录deSEC网站保持账户活跃的脚本",
+  "main": "login.js",
+  "scripts": {
+    "start": "node login.js"
+  },
+  "dependencies": {
+    "axios": "latest",
+    "playwright": "latest"
+  },
+  "keywords": ["desec", "automation", "login", "keepalive", "playwright"],
+  "author": "",
+  "license": "GPL-3.0"
+}
