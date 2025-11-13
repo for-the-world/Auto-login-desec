@@ -66,26 +66,68 @@ async function loginWithAccount(user, pass) {
     
     console.log(`🔒 ${user} - 填写密码...`);
     await page.fill('#input-64', pass);
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000); // 增加等待时间让表单验证完成
     
-    console.log(`⏳ ${user} - 等待登录按钮变为可用状态...`);
-    await page.waitForTimeout(2000);
+    console.log(`⏳ ${user} - 检查页面按钮状态...`);
     
-    // 等待按钮变为可用状态（最多等待10秒）
+    // 检查页面上的所有按钮
+    const allButtons = await page.$$('button');
+    console.log(`🔍 ${user} - 找到 ${allButtons.length} 个按钮`);
+    
+    // 等待并尝试点击登录按钮（最多等待10秒）
     let buttonClicked = false;
     for (let i = 0; i < 10; i++) {
       try {
-        const submitButton = page.locator('text=Log In');
-        const buttonClass = await submitButton.getAttribute('class');
+        // 使用多种方式定位登录按钮
+        let submitButton = null;
         
-        if (buttonClass && !buttonClass.includes('v-btn--disabled')) {
-          console.log(`🔘 ${user} - 登录按钮已可用，开始点击...`);
+        // 方法1: 通过文本定位
+        try {
+          submitButton = await page.$('text=Log In');
+          if (submitButton) {
+            console.log(`🔍 ${user} - 通过文本找到登录按钮`);
+          }
+        } catch (e) {
+          console.log(`⚠️ ${user} - 文本定位失败: ${e.message}`);
+        }
+        
+        // 方法2: 通过type属性定位
+        if (!submitButton) {
+          try {
+            submitButton = await page.$("button[type='submit']");
+            if (submitButton) {
+              console.log(`🔍 ${user} - 通过type属性找到登录按钮`);
+            }
+          } catch (e) {
+            console.log(`⚠️ ${user} - type属性定位失败: ${e.message}`);
+          }
+        }
+        
+        // 方法3: 通过class定位
+        if (!submitButton) {
+          try {
+            submitButton = await page.$('.v-btn__content');
+            if (submitButton) {
+              console.log(`🔍 ${user} - 通过class找到登录按钮`);
+            }
+          } catch (e) {
+            console.log(`⚠️ ${user} - class定位失败: ${e.message}`);
+          }
+        }
+        
+        if (submitButton) {
+          const buttonClass = await submitButton.getAttribute('class');
+          console.log(`🔍 ${user} - 登录按钮class属性: ${buttonClass}`);
+          
+          // 检查按钮是否可用（不再检查disabled状态，直接尝试点击）
+          console.log(`🔘 ${user} - 尝试点击登录按钮...`);
           
           // 尝试多种点击方法
           try {
             // 方法1: 使用JavaScript点击（最可靠）
             await page.evaluate(() => {
-              document.querySelector("button[type='submit']").click();
+              const btn = document.querySelector("button[type='submit']");
+              if (btn) btn.click();
             });
             console.log(`✅ ${user} - 使用JavaScript成功点击登录按钮`);
             buttonClicked = true;
@@ -115,7 +157,7 @@ async function loginWithAccount(user, pass) {
             }
           }
         } else {
-          console.log(`⏳ ${user} - 按钮仍被禁用，等待中... (${i + 1}/10)`);
+          console.log(`⏳ ${user} - 未找到登录按钮，等待中... (${i + 1}/10)`);
           await page.waitForTimeout(1000);
         }
       } catch (e) {
